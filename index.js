@@ -1,46 +1,45 @@
-var express = require('express')
+const express = require('express')
+const app = express()
+const port = 3000
 var bodyParser = require('body-parser')
-var app = express()
-const dbname= "testdb"
-// create application/json parser
-var jsonParser = bodyParser.json()
-// create application/x-www-form-urlencoded parser
-var urlencodedParser = bodyParser.urlencoded({ extended: false })
-// parse various different custom JSON types as JSON
-app.use(bodyParser.json({ type: 'application/*+json' }))
+var insertdata = require('./create-data').Createdata
 
-app.get('/', function (req, res) {
-    res.send('Server is running')
-  });
+var dbop = new insertdata();
+app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.json())
 
-app.post('/putEmployee',jsonParser, function (req, res) {
-    var configObject = req.body;
-  
-    var MongoClient = require('mongodb').MongoClient;
-    var url="mongodb://localhost:27017/";
-    var myobj = configObject;
-    MongoClient.connect(url,{useUnifiedTopology: true}, (err,db) =>{
-        if (err) throw err;
-        var dbo = db.db(dbname);
-        dbo.collection("employee").insert(myobj,(err,subres)=>{
-            if (err) throw err;
-            res.send(subres);
-        })
-    })
-})
+app.get('/', (req, res) => res.send('Hello World!')
 
-app.get('/getAllEmployee', function (req, res) {
-    var MongoClient = require('mongodb').MongoClient;
-    var url="mongodb://localhost:27017/";
-    MongoClient.connect(url,{useUnifiedTopology: true}, (err,db) => {
-        var dbo=db.db(dbname);
-        dbo.collection("employee").find({}).toArray( function(err, result) {
-            if (err) throw err;
-            res.send(result);
-            console.log(result);
-            db.close();
-        });
-    })
-})
-app.listen(3001);
-console.log('server Started port 3001');
+)
+app.post('/fruits/Save/V1', (req, res) => {
+    console.log(req.body);
+    dbop.saveFruitDetails(req.body, function (err, responce) {
+        console.log('Save');
+        res.send(responce);
+    });
+}
+)
+
+app.post('/fruits/upsert/V1', (req, res) => {
+    console.log(req.body);
+    let _name = req.query.name;
+    dbop.upsertFruitsDetails(req.body, _name, function (err, responce) {
+        res.send(responce);
+    });
+}
+)
+
+app.get('/fruits/get/V1', (req, res) => {
+    let _name = req.query.name;
+    if (_name) {
+        console.log(_name);
+    }
+    dbop.getFruitDetail(_name, function (err, responce) {
+        if (err) {
+            res.send(err)
+        }
+        res.send(responce);
+    });
+}
+)
+app.listen(port, () => console.log(`Example app listening on port ${port}!`))
